@@ -46,7 +46,8 @@ export default function AdminDashboard() {
       router.push('/login');
       return;
     }
-    if (user?.role !== 'admin') {
+    // Only redirect if user is loaded (not undefined) and role is not admin
+    if (user && user.role !== 'admin') {
       router.push('/dashboard');
       return;
     }
@@ -71,10 +72,7 @@ export default function AdminDashboard() {
     return null;
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
+
 
   const openForm = (type, item = null) => {
     setFormType(type);
@@ -374,12 +372,7 @@ export default function AdminDashboard() {
                 <h1 className="text-3xl font-bold mb-2">Welcome back, <span className="bg-gradient-to-r from-yellow-200 to-orange-200 bg-clip-text text-transparent">{user?.name}!</span> 👑</h1>
                 <p className="text-orange-100 text-lg">You have full control over content management</p>
               </div>
-              <button
-                onClick={handleLogout}
-                className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-6 py-3 text-sm font-semibold text-white hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-              >
-                🚪 Logout
-              </button>
+            
             </div>
           </div>
 

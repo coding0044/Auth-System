@@ -22,9 +22,11 @@ export default function Navbar() {
   }, [fetchUser]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
-    router.push('/login');
+    if (confirm('Are you sure you want to logout?')) {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      router.replace('/login');
+    }
   };
 
   return (

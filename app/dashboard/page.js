@@ -1,13 +1,22 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import DashboardShell from '@/components/DashboardShell';
 import { useCurrentUser } from '@/hooks/useAuth';
 import { useCategories, useSubcategoriesByCategory, useTopicsBySubcategory, useLettersByTopic } from '@/hooks/useContent';
 
-export default function Dashboard() {
+const levelToPath = {
+  categories: 'dashboard-categories',
+  subcategories: 'dashboard-subcategories',
+  topics: 'dashboard-topics',
+  letters: 'dashboard-letters'
+};
+
+function DashboardContent() {
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Navigation state
   const [currentLevel, setCurrentLevel] = useState('categories'); // categories, subcategories, topics, letters
@@ -16,9 +25,24 @@ export default function Dashboard() {
   const [selectedTopic, setSelectedTopic] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Determine initial level and selected items from URL
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    const path = pathname?.replace('/', '');
+    if (path && path.startsWith('dashboard-')) {
+      const level = Object.keys(levelToPath).find(key => levelToPath[key] === path);
+      if (level) {
+        setCurrentLevel(level);
+      }
+    }
+    // Restore selected items from URL params
+    const catId = searchParams?.get('cat');
+    const subId = searchParams?.get('sub');
+    const topicId = searchParams?.get('topic');
+    if (catId) setSelectedCategory({ _id: catId });
+    if (subId) setSelectedSubcategory({ _id: subId });
+    if (topicId) setSelectedTopic({ _id: topicId });
+  }, [pathname, searchParams]);
 
   // Use our custom hooks
   const { data: userData, isLoading: userLoading, error: userError } = useCurrentUser();
@@ -42,6 +66,37 @@ export default function Dashboard() {
   const topics = Array.isArray(topicsData) ? topicsData : [];
   const letters = Array.isArray(lettersData) ? lettersData : [];
 
+  // Update selected objects with full data when available
+  useEffect(() => {
+    const catId = selectedCategory?._id;
+    if (catId && categories.length > 0) {
+      const fullCat = categories.find(c => c._id === catId);
+      if (fullCat && fullCat.name !== selectedCategory.name) {
+        setSelectedCategory(fullCat);
+      }
+    }
+  }, [categories, selectedCategory]);
+
+  useEffect(() => {
+    const subId = selectedSubcategory?._id;
+    if (subId && subcategories.length > 0) {
+      const fullSub = subcategories.find(s => s._id === subId);
+      if (fullSub && fullSub.name !== selectedSubcategory.name) {
+        setSelectedSubcategory(fullSub);
+      }
+    }
+  }, [subcategories, selectedSubcategory]);
+
+  useEffect(() => {
+    const topicId = selectedTopic?._id;
+    if (topicId && topics.length > 0) {
+      const fullTopic = topics.find(t => t._id === topicId);
+      if (fullTopic && fullTopic.name !== selectedTopic.name) {
+        setSelectedTopic(fullTopic);
+      }
+    }
+  }, [topics, selectedTopic]);
+
   useEffect(() => {
     if (userError) {
       router.push('/login');
@@ -63,23 +118,41 @@ export default function Dashboard() {
     return null; // Will redirect via useEffect
   }
 
+  const buildUrl = (level, params = {}) => {
+    const newPath = levelToPath[level];
+    if (!newPath) return '';
+    const queryParams = new URLSearchParams();
+    if (params.cat) queryParams.set('cat', params.cat);
+    if (params.sub) queryParams.set('sub', params.sub);
+    if (params.topic) queryParams.set('topic', params.topic);
+    const queryString = queryParams.toString();
+    return queryString ? `/${newPath}?${queryString}` : `/${newPath}`;
+  };
+
+  const updateUrl = (level, params = {}) => {
+    const url = buildUrl(level, params);
+    if (url) {
+      router.replace(url);
+    }
+  };
+
   const handleBack = () => {
     if (currentLevel === 'subcategories') {
       setCurrentLevel('categories');
       setSelectedCategory(null);
+      updateUrl('categories');
     } else if (currentLevel === 'topics') {
       setCurrentLevel('subcategories');
       setSelectedSubcategory(null);
+      updateUrl('subcategories', { cat: selectedCategory?._id });
     } else if (currentLevel === 'letters') {
       setCurrentLevel('topics');
       setSelectedTopic(null);
+      updateUrl('topics', { cat: selectedCategory?._id, sub: selectedSubcategory?._id });
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
+
 
   // Navigation handlers
   const handleCategoryClick = (category) => {
@@ -87,17 +160,20 @@ export default function Dashboard() {
     setSelectedSubcategory(null);
     setSelectedTopic(null);
     setCurrentLevel('subcategories');
+    updateUrl('subcategories', { cat: category._id });
   };
 
   const handleSubcategoryClick = (subcategory) => {
     setSelectedSubcategory(subcategory);
     setSelectedTopic(null);
     setCurrentLevel('topics');
+    updateUrl('topics', { cat: selectedCategory?._id, sub: subcategory._id });
   };
 
   const handleTopicClick = (topic) => {
     setSelectedTopic(topic);
     setCurrentLevel('letters');
+    updateUrl('letters', { cat: selectedCategory?._id, sub: selectedSubcategory?._id, topic: topic._id });
   };
 
   // Combined loading state
@@ -165,12 +241,7 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-purple-100 text-lg lg:text-xl font-medium">Discover amazing content organized just for you</p>
               </div>
-              <button
-                onClick={handleLogout}
-                className="bg-white/20 backdrop-blur-md border border-white/40 rounded-xl px-8 py-3 text-base font-semibold text-white hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform"
-              >
-                🚪 Logout
-              </button>
+         
             </div>
 
             {/* Quick Stats */}
@@ -405,5 +476,21 @@ export default function Dashboard() {
         </div>
       </div>
     </DashboardShell>
+  );
+}
+
+// Main export with Suspense wrapper
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 flex items-center justify-center animate-fade-in">
+        <div className="space-y-6">
+          <div className="animate-spin rounded-full h-32 w-32 border-4 border-primary-200 border-t-primary-600 mx-auto shadow-glow"></div>
+          <p className="text-secondary-900 text-center text-lg font-medium">Loading your dashboard...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

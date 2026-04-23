@@ -20,29 +20,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            🔐 AuthSystem
-          </div>
-          <div className="flex gap-4">
-            {!user ? (
-              <>
-                <Link href="/login" className="px-6 py-2 text-indigo-600 font-semibold hover:text-indigo-700">
-                  Login
-                </Link>
-                <Link href="/signup" className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition">
-                  Sign Up
-                </Link>
-              </>
-            ) : (
-              <Link href={user.role === 'admin' ? '/admin-dashboard' : '/dashboard'} className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg transition">
-                Dashboard
-              </Link>
-            )}
-          </div>
-        </div>
-      </nav>
+    
 
       {/* Hero Section */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -158,7 +136,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>© 2024 AuthSystem. All rights reserved. Built with ❤️ for secure authentication.</p>
+          <p>© 2026 AuthSystem. All rights reserved. Built with ❤️ Faraz Ahmed.</p>
         </div>
       </footer>
     </div>
